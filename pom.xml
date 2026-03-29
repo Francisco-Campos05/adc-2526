@@ -34,7 +34,7 @@
 
 	<dependencies>
 		<!-- Compile/runtime dependencies -->
-		
+
 		<dependency>
 			<groupId>com.google.appengine</groupId>
 			<artifactId>appengine-api-1.0-sdk</artifactId>
@@ -61,27 +61,27 @@
 
 
 
-		<dependency> 
+		<dependency>
 		    <groupId>org.glassfish.jersey.inject</groupId>
 		    <artifactId>project</artifactId>
 		    <version>3.1.10</version>
 		    <type>pom</type>
 		</dependency>
-		
-		<dependency> 
+
+		<dependency>
 			<groupId>org.glassfish.jersey.inject</groupId>
 			<artifactId>jersey-hk2</artifactId>
 			<version>3.1.10</version>
 		</dependency>
-		
-		
+
+
 		<dependency>
 		    <groupId>jakarta.platform</groupId>
 		    <artifactId>jakarta.jakartaee-api</artifactId>
 		    <version>10.0.0</version>  <!-- Use latest Jakarta EE version -->
 		    <scope>provided</scope>
 		</dependency>
-<!--			
+<!--
 		<dependency>
 		  <groupId>jakarta.servlet</groupId>
 		  <artifactId>jakarta.servlet-api</artifactId>
@@ -112,14 +112,14 @@
 		    <version>3.0.0</version>
 		</dependency>
 -->
-		
+
 
 		<dependency>
         <groupId>com.auth0</groupId>
         <artifactId>java-jwt</artifactId>
-        <version>4.2.1</version> 
+        <version>4.2.1</version>
     </dependency>
-		
+
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
@@ -128,6 +128,11 @@
 			<groupId>com.google.cloud</groupId>
 			<artifactId>google-cloud-tasks</artifactId>
 		</dependency>
+
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-datastore</artifactId>
+        </dependency>
 
 	</dependencies>
 
@@ -138,7 +143,9 @@
 		<plugin>
 				<groupId>com.google.cloud.tools</groupId>
 				<artifactId>appengine-maven-plugin</artifactId>
-				<version>${appengine.maven.plugin.version}</version>
+				<version>${appengine.maven.plugin.version}</version> <configuration>
+            <projectId>adc-projeto-francisco</projectId>
+        </configuration>
 			</plugin>
 		</plugins>
 		
