@@ -2,9 +2,14 @@ package pt.unl.fct.di.adc.firstwebapp.resources;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+
 import com.google.cloud.datastore.*;
 import com.google.gson.Gson;
+
 import pt.unl.fct.di.adc.firstwebapp.util.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Path("/changeuserpwd")
 @Produces(MediaType.APPLICATION_JSON)
@@ -40,8 +45,14 @@ public class ChangeUserPwdResource {
             if (!user.getString("user_pwd").equals(req.input.oldPassword))
                 return Response.ok(g.toJson(new ErrorResponse("9900", "INVALID_CREDENTIALS"))).build();
 
+            // Atualiza a password
             datastore.put(Entity.newBuilder(user).set("user_pwd", req.input.newPassword).build());
-            return Response.ok(g.toJson(new SuccessResponse("Password changed successfully"))).build();
+
+            // Cria a resposta
+            Map<String, String> responseData = new HashMap<>();
+            responseData.put("message", "Password changed successfully");
+
+            return Response.ok(g.toJson(new SuccessResponse(responseData))).build();
         } catch (Exception e) {
             return Response.ok(g.toJson(new ErrorResponse("500", "Internal server error"))).build();
         }
