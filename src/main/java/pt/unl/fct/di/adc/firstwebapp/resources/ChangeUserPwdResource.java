@@ -28,9 +28,8 @@ public class ChangeUserPwdResource {
             if (storedToken.getLong("expiresAt") < (System.currentTimeMillis() / 1000))
                 return Response.ok(g.toJson(new ErrorResponse("9904", "TOKEN_EXPIRED"))).build();
 
-            if (!storedToken.getString("username").equals(req.input.username) && !"ADMIN".equals(storedToken.getString("role"))) {
+            if (!storedToken.getString("username").equals(req.input.username))
                 return Response.ok(g.toJson(new ErrorResponse("9905", "UNAUTHORIZED"))).build();
-            }
 
             Key userKey = datastore.newKeyFactory().setKind("User").newKey(req.input.username);
             Entity user = datastore.get(userKey);
@@ -38,9 +37,8 @@ public class ChangeUserPwdResource {
             if (user == null) return Response.ok(g.toJson(new ErrorResponse("9902", "USER_NOT_FOUND"))).build();
 
             // Erro 9900: Password antiga errada
-            if (!user.getString("user_pwd").equals(req.input.oldPassword)) {
+            if (!user.getString("user_pwd").equals(req.input.oldPassword))
                 return Response.ok(g.toJson(new ErrorResponse("9900", "INVALID_CREDENTIALS"))).build();
-            }
 
             datastore.put(Entity.newBuilder(user).set("user_pwd", req.input.newPassword).build());
             return Response.ok(g.toJson(new SuccessResponse("Password changed successfully"))).build();

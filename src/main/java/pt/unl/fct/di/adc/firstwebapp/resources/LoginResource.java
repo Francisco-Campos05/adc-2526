@@ -18,6 +18,7 @@ import com.google.cloud.datastore.Key;
 import com.google.gson.Gson;
 
 import pt.unl.fct.di.adc.firstwebapp.util.AuthToken;
+import pt.unl.fct.di.adc.firstwebapp.util.Login;
 import pt.unl.fct.di.adc.firstwebapp.util.LoginData;
 import pt.unl.fct.di.adc.firstwebapp.util.ErrorResponse;
 import pt.unl.fct.di.adc.firstwebapp.util.SuccessResponse;
@@ -36,7 +37,11 @@ public class LoginResource {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response doLogin(LoginData data) {
+    public Response doLogin(Login req) {
+        if (req == null || req.input == null)
+            return Response.ok(g.toJson(new ErrorResponse("9906", "INVALID_INPUT"))).build();
+
+        LoginData data = req.input;
         LOG.fine("Attempt to login user: " + data.username);
 
         // Input inválido (9906)
