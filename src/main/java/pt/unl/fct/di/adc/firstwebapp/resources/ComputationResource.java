@@ -43,7 +43,6 @@ public class ComputationResource {
 	@GET
 	@Path("/time")
 	public Response getCurrentTime() {
-
 		LOG.fine("Replying to date request.");
 		return Response.ok().entity(g.toJson(fmt.format(new Date()))).build();
 	}
