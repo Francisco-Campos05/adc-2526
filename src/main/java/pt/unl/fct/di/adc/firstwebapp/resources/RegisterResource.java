@@ -34,8 +34,7 @@ public class RegisterResource {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response doRegistration(Register req) {
-
-        // Se o JSON não trouxer o objeto "input", dá erro
+        // Erro 9906: Input inválido
         if (req == null || req.input == null) {
             return Response.ok(g.toJson(new ErrorResponse("9906", "INVALID_INPUT"))).build();
         }
@@ -55,13 +54,13 @@ public class RegisterResource {
             Entity user = txn.get(userKey);
 
             if (user != null) {
-                // Utilizador já existe! Devolvemos 200 OK, mas com a framework de erro exigida
+                // Erro 9901: Utilizador já existe (mas devolvemos 200 OK!)
                 txn.rollback();
                 return Response.ok(g.toJson(new ErrorResponse("9901", "USER_ALREADY_EXISTS"))).build();
             } else {
                 // Criar a entidade para guardar na Base de Dados
                 user = Entity.newBuilder(userKey)
-                        .set("user_pwd", data.password) // (Mais tarde deve aplicar Hash à password aqui)
+                        .set("user_pwd", data.password)
                         .set("user_email", data.email != null ? data.email : "")
                         .set("user_phone", data.phone != null ? data.phone : "")
                         .set("user_address", data.address != null ? data.address : "")
@@ -72,7 +71,7 @@ public class RegisterResource {
                 txn.commit();
 
                 LOG.info("Utilizador registado com sucesso: " + data.username);
-                return Response.ok(g.toJson(new SuccessResponse("Conta criada com sucesso"))).build();
+                return Response.ok(g.toJson(new SuccessResponse("Account created successfully."))).build();
             }
         } finally {
             if (txn.isActive()) {

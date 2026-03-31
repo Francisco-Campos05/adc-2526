@@ -1,7 +1,9 @@
 package pt.unl.fct.di.adc.firstwebapp.resources;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -11,8 +13,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import com.google.cloud.datastore.*;
 import com.google.gson.Gson;
-import pt.unl.fct.di.adc.firstwebapp.util.AuthToken;
-import pt.unl.fct.di.adc.firstwebapp.util.ErrorResponse;
+import pt.unl.fct.di.adc.firstwebapp.util.*;
 
 @Path("/showusers")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
@@ -24,31 +25,53 @@ public class ShowUsersResource {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response showUsers(AuthToken token) {
-        if (token == null || token.tokenID == null)
-            return Response.status(Response.Status.BAD_REQUEST).entity(g.toJson(new ErrorResponse("400", "Missing token."))).build();
+    public Response showUsers(GenericToken req) {
+        // 1. Validar se enviou o Token (Erro 9906)
+        if (req == null || req.token == null || req.token.tokenId == null) {
+            return Response.ok(g.toJson(new ErrorResponse("9906", "INVALID_INPUT"))).build();
+        }
 
         try {
-            // 1. Validar Token e se é ADMIN
-            Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(token.tokenID);
+            // 2. Validar Token na BD
+            Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(req.token.tokenId);
             Entity storedToken = datastore.get(tokenKey);
-            if (storedToken == null || storedToken.getLong("expirationData") < System.currentTimeMillis())
-                return Response.status(Response.Status.FORBIDDEN).build();
 
-            Entity user = datastore.get(datastore.newKeyFactory().setKind("User").newKey(storedToken.getString("username")));
-            if (!"ADMIN".equals(user.getString("user_role")))
-                return Response.status(Response.Status.FORBIDDEN).entity(g.toJson(new ErrorResponse("403", "Only admins can see all users."))).build();
+            if (storedToken == null)
+                return Response.ok(g.toJson(new ErrorResponse("9903", "INVALID_TOKEN"))).build();
 
-            // 2. Query para listar todos
+            if (storedToken.getLong("expiresAt") < (System.currentTimeMillis() / 1000))
+                return Response.ok(g.toJson(new ErrorResponse("9904", "TOKEN_EXPIRED"))).build();
+
+            // 3. Apenas ADMIN ou BOFFICER podem ver todos os utilizadores
+            String role = storedToken.getString("role");
+            if (!"ADMIN".equals(role) && !"BOFFICER".equals(role)) {
+                return Response.ok(g.toJson(new ErrorResponse("9905", "UNAUTHORIZED"))).build();
+            }
+
+            // 4. Procurar utilizadores
             Query<Entity> query = Query.newEntityQueryBuilder().setKind("User").build();
             QueryResults<Entity> results = datastore.run(query);
-            List<String> userList = new ArrayList<>();
+
+            List<Map<String, String>> userList = new ArrayList<>();
+
             while (results.hasNext()) {
-                userList.add(results.next().getKey().getName());
+                Entity u = results.next();
+                Map<String, String> userInfo = new HashMap<>();
+                userInfo.put("username", u.getKey().getName());
+                userInfo.put("role", u.getString("user_role"));
+
+
+                userList.add(userInfo);
             }
-            return Response.ok(g.toJson(userList)).build();
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("users", userList);
+
+            return Response.ok(g.toJson(new SuccessResponse(responseData))).build();
+
         } catch (Exception e) {
-            return Response.serverError().build();
+            LOG.severe("Erro interno a listar utilizadores: " + e.getMessage());
+            return Response.ok(g.toJson(new ErrorResponse("500", "Internal Server Error"))).build();
         }
     }
 }

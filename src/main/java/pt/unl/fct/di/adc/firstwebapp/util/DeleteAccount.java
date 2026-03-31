@@ -2,9 +2,9 @@ package pt.unl.fct.di.adc.firstwebapp.util;
 
 public class DeleteAccount {
     public AuthToken token;
+    public Input input;
 
-    // O nome da conta que o ADMIN quer apagar
-    public String targetUsername;
-
-    public DeleteAccount() {}
+    public static class Input {
+        public String username;
+    }
 }

@@ -1,23 +1,15 @@
 package pt.unl.fct.di.adc.firstwebapp.resources;
 
 import java.util.logging.Logger;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.DatastoreOptions;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
+import com.google.cloud.datastore.*;
 import com.google.gson.Gson;
-
-import pt.unl.fct.di.adc.firstwebapp.util.DeleteAccount;
-import pt.unl.fct.di.adc.firstwebapp.util.ErrorResponse;
-import pt.unl.fct.di.adc.firstwebapp.util.SuccessResponse;
+import pt.unl.fct.di.adc.firstwebapp.util.*;
 
 @Path("/deleteaccount")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
@@ -33,49 +25,44 @@ public class DeleteAccountResource {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response deleteAccount(DeleteAccount req) {
-        LOG.fine("Attempt to delete account.");
-
-        // 1. Validar inputs
-        if (req == null || req.token == null || req.token.tokenID == null || req.targetUsername == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(g.toJson(new ErrorResponse("400", "Missing token or target username."))).build();
+        // 1. Validar estrutura do JSON (Erro 9906)
+        if (req == null || req.token == null || req.token.tokenId == null || req.input == null || req.input.username == null) {
+            return Response.ok(g.toJson(new ErrorResponse("9906", "INVALID_INPUT"))).build();
         }
 
         try {
-            // 2. Validar o Token do Administrador na BD
-            Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(req.token.tokenID);
+            // 2. Validar o token do Admin
+            Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(req.token.tokenId);
             Entity storedToken = datastore.get(tokenKey);
 
-            if (storedToken == null || storedToken.getLong("expirationData") < System.currentTimeMillis()) {
-                return Response.status(Response.Status.FORBIDDEN).entity(g.toJson(new ErrorResponse("403", "Invalid or Expired Token."))).build();
+            if (storedToken == null)
+                return Response.ok(g.toJson(new ErrorResponse("9903", "INVALID_TOKEN"))).build();
+
+            if (storedToken.getLong("expiresAt") < (System.currentTimeMillis() / 1000))
+                return Response.ok(g.toJson(new ErrorResponse("9904", "TOKEN_EXPIRED"))).build();
+
+            // 3. Verificar se o utilizador que está a pedir a eliminação é mesmo ADMIN
+            if (!"ADMIN".equals(storedToken.getString("role"))) {
+                LOG.warning("Tentativa de apagar conta sem privilégios ADMIN.");
+                return Response.ok(g.toJson(new ErrorResponse("9905", "UNAUTHORIZED"))).build();
             }
 
-            // 3. Buscar o utilizador que está a fazer o pedido para verificar se é ADMIN
-            String requesterUsername = storedToken.getString("username");
-            Key requesterKey = datastore.newKeyFactory().setKind("User").newKey(requesterUsername);
-            Entity requester = datastore.get(requesterKey);
-
-            if (requester == null || !"ADMIN".equals(requester.getString("user_role"))) {
-                LOG.warning("User " + requesterUsername + " attempted to delete an account without ADMIN privileges.");
-                return Response.status(Response.Status.FORBIDDEN).entity(g.toJson(new ErrorResponse("403", "Access denied. Admins only."))).build();
-            }
-
-            // 4. Verificar se a conta a apagar existe
-            Key targetUserKey = datastore.newKeyFactory().setKind("User").newKey(req.targetUsername);
+            // 4. Verificar se a conta alvo a apagar existe
+            Key targetUserKey = datastore.newKeyFactory().setKind("User").newKey(req.input.username);
             Entity targetUser = datastore.get(targetUserKey);
 
-            if (targetUser == null) {
-                return Response.status(Response.Status.NOT_FOUND).entity(g.toJson(new ErrorResponse("404", "Target user not found."))).build();
-            }
+            if (targetUser == null)
+                return Response.ok(g.toJson(new ErrorResponse("9902", "USER_NOT_FOUND"))).build();
 
-            // 5. O Admin pode apagar! (Apaga a conta na base de dados)
+            // 5. Apagar o utilizador do Datastore
             datastore.delete(targetUserKey);
 
-            LOG.info("Admin " + requesterUsername + " deleted account: " + req.targetUsername);
-            return Response.ok(g.toJson(new SuccessResponse("Account deleted successfully."))).build();
+            LOG.info("Conta apagada com sucesso pelo Admin: " + req.input.username);
+            return Response.ok(g.toJson(new SuccessResponse("Account deleted successfully"))).build();
 
         } catch (Exception e) {
-            LOG.severe("Error deleting account: " + e.getMessage());
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(g.toJson(new ErrorResponse("500", "Internal server error."))).build();
+            LOG.severe("Erro interno a apagar conta: " + e.getMessage());
+            return Response.ok(g.toJson(new ErrorResponse("500", "Internal server error"))).build();
         }
     }
 }

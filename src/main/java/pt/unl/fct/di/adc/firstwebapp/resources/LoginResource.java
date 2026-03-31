@@ -1,12 +1,12 @@
 package pt.unl.fct.di.adc.firstwebapp.resources;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import pt.unl.fct.di.adc.firstwebapp.util.AuthToken;
 import pt.unl.fct.di.adc.firstwebapp.util.LoginData;
 import pt.unl.fct.di.adc.firstwebapp.util.ErrorResponse;
+import pt.unl.fct.di.adc.firstwebapp.util.SuccessResponse;
 
 @Path("/login")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
@@ -27,7 +28,6 @@ public class LoginResource {
 
     private static final Logger LOG = Logger.getLogger(LoginResource.class.getName());
     private final Gson g = new Gson();
-
     // Forçar o ID do projeto para o Datastore funcionar localmente
     private final Datastore datastore = DatastoreOptions.newBuilder().setProjectId("adc-projeto-francisco").build().getService();
 
@@ -39,10 +39,9 @@ public class LoginResource {
     public Response doLogin(LoginData data) {
         LOG.fine("Attempt to login user: " + data.username);
 
-        // 1. Verificações de segurança
+        // Input inválido (9906)
         if (data.username == null || data.password == null || data.username.trim().isEmpty() || data.password.trim().isEmpty()) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(g.toJson(new ErrorResponse("400", "Missing username or password."))).build();
+            return Response.ok(g.toJson(new ErrorResponse("9906", "INVALID_INPUT"))).build();
         }
 
         // 2. Criar a chave para procurar o utilizador na base de dados
@@ -57,49 +56,36 @@ public class LoginResource {
                 String pwd = user.getString("user_pwd");
 
                 if (pwd.equals(data.password)) {
-                    // 5. Sucesso! Gerar a "Pulseira VIP" (Token)
-                    AuthToken token = new AuthToken(data.username);
+                    // Buscar o role à BD para colocar no token
+                    String role = user.getString("user_role");
+                    AuthToken token = new AuthToken(data.username, role);
 
-                    // 6. Guardar o Token na base de dados (para sabermos no futuro se ele é válido)
-                    Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(token.tokenID);
+                    // Guardar o token na BD
+                    Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(token.tokenId);
                     Entity tokenEntity = Entity.newBuilder(tokenKey)
                             .set("username", token.username)
-                            .set("creationData", token.creationData)
-                            .set("expirationData", token.expirationData)
+                            .set("role", token.role)
+                            .set("issuedAt", token.issuedAt)
+                            .set("expiresAt", token.expiresAt)
                             .build();
 
                     datastore.put(tokenEntity);
 
-                    // 7. Devolver o Token ao utilizador no Postman
+                    Map<String, Object> tokenData = new HashMap<>();
+                    tokenData.put("token", token);
+
                     LOG.info("User '" + data.username + "' logged in successfully.");
-                    return Response.ok(g.toJson(token)).build();
+                    return Response.ok(g.toJson(new SuccessResponse(tokenData))).build();
                 }
             }
 
-            // 8. Se chegou aqui, é porque a password estava errada ou o utilizador não existe
+            // Credenciais inválidas (Erro 9900) - Devolvemos 200 OK na mesma!
             LOG.warning("Failed login attempt for user: " + data.username);
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(g.toJson(new ErrorResponse("403", "Incorrect username or password.")))
-                    .build();
+            return Response.ok(g.toJson(new ErrorResponse("9900", "INVALID_CREDENTIALS"))).build();
 
         } catch (Exception e) {
             LOG.severe("Error during login: " + e.getMessage());
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(g.toJson(new ErrorResponse("500", "Internal server error.")))
-                    .build();
+            return Response.ok(g.toJson(new ErrorResponse("500", "Internal server error."))).build();
         }
-    }
-
-    @GET
-    @Path("/{username}")
-    public Response checkUsernameAvailable(@PathParam("username") String username) {
-        // Substituir a lógica hardcoded do jleitao por uma verificação real na BD
-        Key userKey = datastore.newKeyFactory().setKind("User").newKey(username);
-        Entity user = datastore.get(userKey);
-
-        // Se 'user' não for null, o username já está ocupado (false). Se for null, está livre (true).
-        boolean isAvailable = (user == null);
-
-        return Response.ok().entity(g.toJson(isAvailable)).build();
     }
 }

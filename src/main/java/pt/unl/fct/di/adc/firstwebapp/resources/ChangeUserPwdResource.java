@@ -14,25 +14,38 @@ public class ChangeUserPwdResource {
 
     @POST
     @Path("/")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response changePwd(ChangePwd req) {
-        // 1. Validar Token
-        Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(req.token.tokenID);
-        Entity storedToken = datastore.get(tokenKey);
-        if(storedToken == null) return Response.status(Response.Status.FORBIDDEN).build();
+        if (req == null || req.token == null || req.token.tokenId == null || req.input == null || req.input.username == null) {
+            return Response.ok(g.toJson(new ErrorResponse("9906", "INVALID_INPUT"))).build();
+        }
 
-        // 2. Buscar User e validar password antiga
-        Key userKey = datastore.newKeyFactory().setKind("User").newKey(storedToken.getString("username"));
-        Entity user = datastore.get(userKey);
+        try {
+            Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(req.token.tokenId);
+            Entity storedToken = datastore.get(tokenKey);
 
-        if(!user.getString("user_pwd").equals(req.oldPassword))
-            return Response.status(Response.Status.FORBIDDEN).entity(g.toJson(new ErrorResponse("403", "Old password incorrect."))).build();
+            if (storedToken == null) return Response.ok(g.toJson(new ErrorResponse("9903", "INVALID_TOKEN"))).build();
+            if (storedToken.getLong("expiresAt") < (System.currentTimeMillis() / 1000))
+                return Response.ok(g.toJson(new ErrorResponse("9904", "TOKEN_EXPIRED"))).build();
 
-        // 3. Validar nova password
-        if(!req.newPassword.equals(req.confirmation))
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            if (!storedToken.getString("username").equals(req.input.username) && !"ADMIN".equals(storedToken.getString("role"))) {
+                return Response.ok(g.toJson(new ErrorResponse("9905", "UNAUTHORIZED"))).build();
+            }
 
-        // 4. Guardar
-        datastore.put(Entity.newBuilder(user).set("user_pwd", req.newPassword).build());
-        return Response.ok(g.toJson(new SuccessResponse("Password changed."))).build();
+            Key userKey = datastore.newKeyFactory().setKind("User").newKey(req.input.username);
+            Entity user = datastore.get(userKey);
+
+            if (user == null) return Response.ok(g.toJson(new ErrorResponse("9902", "USER_NOT_FOUND"))).build();
+
+            // Erro 9900: Password antiga errada
+            if (!user.getString("user_pwd").equals(req.input.oldPassword)) {
+                return Response.ok(g.toJson(new ErrorResponse("9900", "INVALID_CREDENTIALS"))).build();
+            }
+
+            datastore.put(Entity.newBuilder(user).set("user_pwd", req.input.newPassword).build());
+            return Response.ok(g.toJson(new SuccessResponse("Password changed successfully"))).build();
+        } catch (Exception e) {
+            return Response.ok(g.toJson(new ErrorResponse("500", "Internal server error"))).build();
+        }
     }
 }
