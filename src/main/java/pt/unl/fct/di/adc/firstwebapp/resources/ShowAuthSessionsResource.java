@@ -55,13 +55,13 @@ public class ShowAuthSessionsResource {
             QueryResults<Entity> results = datastore.run(query);
 
             List<Map<String, Object>> sessionList = new ArrayList<>();
-            long currentTime = System.currentTimeMillis() / 1000;
+            int currentTime = (int) System.currentTimeMillis() / 1000;
 
             while (results.hasNext()) {
                 Entity t = results.next();
 
                 // Extrair o tempo (lidando com os antigos também)
-                long expiresAt = t.contains("expiresAt") ? t.getLong("expiresAt") : 0;
+                int expiresAt = t.contains("expiresAt") ? (int) t.getLong("expiresAt") : 0;
 
                 //Se a sessão já expirou, apaga-mo-la da Base de Dados e saltamos à frente!
                 if (expiresAt < currentTime) {
