@@ -71,7 +71,14 @@ public class RegisterResource {
                 txn.commit();
 
                 LOG.info("Utilizador registado com sucesso: " + data.username);
-                return Response.ok(g.toJson(new SuccessResponse("Account created successfully."))).build();
+
+                // Criar o output
+                java.util.Map<String, String> responseData = new java.util.HashMap<>();
+                responseData.put("username", data.username);
+                responseData.put("role", data.role != null ? data.role : "USER");
+
+                LOG.info("Utilizador registado com sucesso: " + data.username);
+                return Response.ok(g.toJson(new SuccessResponse(responseData))).build();
             }
         } finally {
             if (txn.isActive()) {
