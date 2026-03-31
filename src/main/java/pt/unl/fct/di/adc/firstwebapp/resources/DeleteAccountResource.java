@@ -25,7 +25,7 @@ public class DeleteAccountResource {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response deleteAccount(DeleteAccount req) {
+    public Response deleteAccount(UsernameTarget req) {
         if (req == null || req.token == null || req.token.tokenId == null || req.input == null || req.input.username == null) {
             return Response.ok(g.toJson(new ErrorResponse("9906", "INVALID_INPUT"))).build();
         }

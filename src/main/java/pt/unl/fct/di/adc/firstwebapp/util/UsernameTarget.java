@@ -1,6 +1,6 @@
 package pt.unl.fct.di.adc.firstwebapp.util;
 
-public class DeleteAccount {
+public class UsernameTarget {
     public AuthToken token;
     public Input input;
 

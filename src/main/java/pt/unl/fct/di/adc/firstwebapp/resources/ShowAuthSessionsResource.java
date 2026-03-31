@@ -61,8 +61,7 @@ public class ShowAuthSessionsResource {
                 Entity t = results.next();
 
                 // Extrair o tempo (lidando com os antigos também)
-                long expiresAt = t.contains("expiresAt") ? t.getLong("expiresAt") :
-                        (t.contains("expirationData") ? t.getLong("expirationData") / 1000 : 0);
+                long expiresAt = t.contains("expiresAt") ? t.getLong("expiresAt") : 0;
 
                 //Se a sessão já expirou, apaga-mo-la da Base de Dados e saltamos à frente!
                 if (expiresAt < currentTime) {
