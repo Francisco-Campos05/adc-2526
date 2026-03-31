@@ -16,7 +16,7 @@ import com.google.cloud.datastore.Transaction;
 import com.google.gson.Gson;
 
 import pt.unl.fct.di.adc.firstwebapp.util.RegisterData;
-import pt.unl.fct.di.adc.firstwebapp.util.RegisterRequest;
+import pt.unl.fct.di.adc.firstwebapp.util.Register;
 import pt.unl.fct.di.adc.firstwebapp.util.ErrorResponse;
 import pt.unl.fct.di.adc.firstwebapp.util.SuccessResponse;
 
@@ -33,7 +33,7 @@ public class RegisterResource {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response doRegistration(RegisterRequest req) {
+    public Response doRegistration(Register req) {
 
         // Se o JSON não trouxer o objeto "input", dá erro
         if (req == null || req.input == null) {

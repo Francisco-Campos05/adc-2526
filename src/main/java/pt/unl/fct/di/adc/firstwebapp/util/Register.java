@@ -1,10 +1,10 @@
 package pt.unl.fct.di.adc.firstwebapp.util;
 
-public class RegisterRequest {
+public class Register {
 
     public RegisterData input; // Corresponde ao objeto "input" do JSON
 
-    public RegisterRequest() {
+    public Register() {
 
     }
 }
