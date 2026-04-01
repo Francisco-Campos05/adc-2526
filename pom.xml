@@ -34,8 +34,6 @@
 
 
     <dependencies>
-        <!-- Compile/runtime dependencies -->
-
         <dependency>
             <groupId>com.google.appengine</groupId>
             <artifactId>appengine-api-1.0-sdk</artifactId>
@@ -78,42 +76,8 @@
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>
-            <version>10.0.0</version>  <!-- Use latest Jakarta EE version -->
-            <scope>provided</scope>
+            <version>10.0.0</version>  <scope>provided</scope>
         </dependency>
-        <!--
-                <dependency>
-                  <groupId>jakarta.servlet</groupId>
-                  <artifactId>jakarta.servlet-api</artifactId>
-                  <version>6.1.0</version>
-                  <type>jar</type>
-                  <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>jakarta.servlet.jsp</groupId>
-                    <artifactId>jakarta.servlet.jsp-api</artifactId>
-                    <version>4.0.0</version>
-                    <scope>provided</scope>
-                </dependency>
-
-                <dependency>
-                    <groupId>jakarta.ws.rs</groupId>
-                    <artifactId>jakarta.ws.rs-api</artifactId>
-                    <version>4.0.0</version>
-                </dependency>
-                <dependency>
-                    <groupId>jakarta.xml.bind</groupId>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
-                    <version>4.0.2</version>
-                </dependency>
-                <dependency>
-                    <groupId>jakarta.annotation</groupId>
-                    <artifactId>jakarta.annotation-api</artifactId>
-                    <version>3.0.0</version>
-                </dependency>
-        -->
-
-
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
@@ -137,13 +101,16 @@
     </dependencies>
 
     <build>
-        <!-- To allow interaction with Gcloud client through maven-->
         <outputDirectory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</outputDirectory>
         <plugins>
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>appengine-maven-plugin</artifactId>
                 <version>${appengine.maven.plugin.version}</version>
+                <configuration>
+                    <projectId>adc-projeto-francisco</projectId>
+                    <version>1</version>
+                </configuration>
             </plugin>
         </plugins>
 
