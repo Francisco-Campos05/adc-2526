@@ -21,13 +21,13 @@ import pt.unl.fct.di.adc.firstwebapp.util.UsernameTarget;
 
 @Path("/logout")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
-public class Logout {
+public class LogoutResource {
 
-    private static final Logger LOG = Logger.getLogger(Logout.class.getName());
+    private static final Logger LOG = Logger.getLogger(LogoutResource.class.getName());
     private final Gson g = new Gson();
     private final Datastore datastore = DatastoreOptions.newBuilder().setProjectId("adc-projeto-francisco").build().getService();
 
-    public Logout() {}
+    public LogoutResource() {}
 
     @POST
     @Path("/")
@@ -76,9 +76,9 @@ public class Logout {
             }
 
             Map<String, String> responseData = new HashMap<>();
-            responseData.put("message", "Logout successful");
+            responseData.put("message", "LogoutResource successful");
 
-            LOG.info("Logout realizado. Foram invalidadas " + count + " sessões para o utilizador: " + targetUsername);
+            LOG.info("LogoutResource realizado. Foram invalidadas " + count + " sessões para o utilizador: " + targetUsername);
             return Response.ok(g.toJson(new SuccessResponse(responseData))).build();
 
         } catch (Exception e) {

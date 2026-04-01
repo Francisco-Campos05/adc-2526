@@ -20,13 +20,13 @@ import pt.unl.fct.di.adc.firstwebapp.util.UsernameTarget;
 
 @Path("/showuserrole")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
-public class ShowUserRole {
+public class ShowUserRoleResource {
 
-    private static final Logger LOG = Logger.getLogger(ShowUserRole.class.getName());
+    private static final Logger LOG = Logger.getLogger(ShowUserRoleResource.class.getName());
     private final Gson g = new Gson();
     private final Datastore datastore = DatastoreOptions.newBuilder().setProjectId("adc-projeto-francisco").build().getService();
 
-    public ShowUserRole() {}
+    public ShowUserRoleResource() {}
 
     @POST
     @Path("/")
@@ -42,11 +42,8 @@ public class ShowUserRole {
             Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(req.token.tokenId);
             Entity storedToken = datastore.get(tokenKey);
 
-            if (storedToken == null)
-                return Response.ok(g.toJson(new ErrorResponse("9903", "INVALID_TOKEN"))).build();
-
-            if (storedToken.getLong("expiresAt") < (System.currentTimeMillis() / 1000))
-                return Response.ok(g.toJson(new ErrorResponse("9904", "TOKEN_EXPIRED"))).build();
+            Response response = VerificationResource.validateToken(g, storedToken);
+            if (response != null) return response;
 
             // 3. Permissões: Apenas ADMIN e BOFFICER
             String requesterRole = storedToken.getString("role");

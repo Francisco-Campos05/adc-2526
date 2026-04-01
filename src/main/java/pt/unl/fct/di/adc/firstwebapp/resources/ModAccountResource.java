@@ -44,14 +44,10 @@ public class ModAccountResource {
             Key tokenKey = datastore.newKeyFactory().setKind("UserToken").newKey(req.token.tokenId);
             Entity storedToken = datastore.get(tokenKey);
 
-            if (storedToken == null) {
-                return Response.ok(g.toJson(new ErrorResponse("9903", "INVALID_TOKEN"))).build();
-            }
-            if (storedToken.getLong("expiresAt") < (System.currentTimeMillis() / 1000)) {
-                return Response.ok(g.toJson(new ErrorResponse("9904", "TOKEN_EXPIRED"))).build();
-            }
+            Response response = VerificationResource.validateToken(g, storedToken);
+            if (response != null) return response;
 
-            // 3. Verificar permissões (Erro 9905: UNAUTHORIZED)
+            // 3. Verificar permissões
             // Apenas o próprio, um ADMIN ou um BOFFICER podem modificar contas
             String requesterUsername = storedToken.getString("username");
             String requesterRole = storedToken.getString("role");
